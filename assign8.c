@@ -1,20 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
 
 int main(int argc, char *argv[]){
-    // Look at fxn execl("/bin/ls", "ls", "-1", NULL); to handle 10 arguments
-    // USE execvp(...) to handle your p(?) arguments by looking at $PATH to get
-    //  various paths to bash commands (ls, kill, gcc, find, sed, awk, ... etc)
-
-    // Once you execl the program (fork it) you relenquish command to it. 
-
     char *execArgs[30][100];    
     int i;
     int j = 0; // Row index
     int x = 0; // Column index
     int rows;
+    int status;
+    pid_t pid;
 
     long lForkPid, lWaitPid;
     int iExitStatus = 0;
@@ -33,50 +30,28 @@ int main(int argc, char *argv[]){
             execArgs[j][x] = argv[i];
             x += 1;
         }
-    // printf("%s\n", execArgs[j][x]);
     }
     
     rows = j + 1;
 
-    printf("argc: %d\n", argc);
-    printf("rows: %d\n", rows);
+    // fork()
+    pid_t pids[rows]; 
     
-    // Split based on the args
-    lForkPid = fork();
-
-    // Both parent and child continue here
-    switch(lForkPid)
-    {
-        case -1:
-            printf("Fork Failed\n");
-            return 1;
-            break;
-        case 0: // child process
-            printf("Child Process: PID = %ld, PPID = %ld\n"
-                , (long) getpid(), (long) getppid());
-
-            // invoke a different executable for the child
-
-            printf("%s %s\n", execArgs[0][0], execArgs[0][1]);
-            execvp(execArgs[0][0], execArgs[0]);
-            // TODO: ERROR HANDLING? 
-        default: // parent process
-            lWaitPid = wait(&iExitStatus);
-
-            if(lWaitPid == -1){
-                printf("Wait Error\n");
-                return 1;
-            }
-
-            printf("Parent Process: PID = %ld, PPID = %ld\n"
-                , (long) getpid(), (long) getppid()); 
-            printf("Parent Process: my child's PID = %ld\n"
-                , lForkPid);
-            printf("Parent Process: wait pid = %ld\n"
-                , lWaitPid);
-            printf("Parent Process: exit status = %d\n"
-                , iExitStatus);
+    for(i = 0; i < rows; i++){
+        if((pids[i] = fork()) < 0){
+            printf("Error\n");
+            abort();
+        } else if (pids[i] == 0){
+            printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
+            execvp(execArgs[i][0], execArgs[i]);
+            // printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
+            return 0;
+        }
     }
-
-    return 0;
+    
+    while (rows > 0){
+        // printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
+        pid = wait(&status);
+        --rows;
+    }
 }
