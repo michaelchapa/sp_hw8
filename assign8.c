@@ -6,11 +6,8 @@
 
 int main(int argc, char *argv[]){
     char *execArgs[30][100];    
-    int i;
-    int j = 0; // Row index
-    int x = 0; // Column index
-    int rows;
-    int status;
+    int i, j = 0, x = 0;
+    int rows, status;
     pid_t pid;
 
     long lForkPid, lWaitPid;
@@ -42,15 +39,14 @@ int main(int argc, char *argv[]){
             printf("Error\n");
             abort();
         } else if (pids[i] == 0){
-            printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
+            printf("PID: %ld, PPID: %ld, CMD: %s \n"
+                , (long) getpid(), (long) getppid(), execArgs[i][0]);
             execvp(execArgs[i][0], execArgs[i]);
-            // printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
             return 0;
         }
     }
     
     while (rows > 0){
-        // printf("PID: %ld, PPID: %ld, CMD: \n", (long) getpid(), (long) getppid());
         pid = wait(&status);
         --rows;
     }
